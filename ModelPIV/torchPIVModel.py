@@ -18,16 +18,34 @@ class torchPIVModel(BasicModelPIV):
 
         self.device = "cpu"
 
-        self.wind_size = 128
+        self.wind_size = 64
         self.overlap = 32
         self.multipass = 2
         self.multipass_mode = "DWS"
         self.multipass_scale = 2.0
 
-        self.X = None
-        self.Y = None
-        self.Vx = None
-        self.Vy = None
+    def set_setting(self,
+                    tmp_folder_name="tmp",
+                    folder_mode="pairs",
+                    file_fmt="jpg",
+                    device="cpu",
+                    wind_size=96,
+                    overlap=48,
+                    multipass=2,
+                    multipass_mode="DWS",
+                    multipass_scale=2.0
+                    ):
+        self.tmp_folder_name = tmp_folder_name
+        self.folder_mode = folder_mode
+        self.file_fmt = file_fmt
+
+        self.device = device
+
+        self.wind_size = wind_size
+        self.overlap = overlap
+        self.multipass = multipass
+        self.multipass_mode = multipass_mode
+        self.multipass_scale = multipass_scale
 
     def predict(self, particles):
 
@@ -61,46 +79,15 @@ class torchPIVModel(BasicModelPIV):
             print("particles is not evolved yet")
             exit()
 
-
     def error(self, flow):
-        VxGround, VyGround = flow.velocity(self.X, self.Y)
+        self.VxGround, self.VyGround = flow.velocity(self.X, self.Y)
 
-        VxGround = np.reshape(VxGround, self.Vx.shape)
-        VyGround = np.reshape(VyGround, self.Vy.shape)
+        self.VxGround = np.reshape(self.VxGround, self.Vx.shape)
+        self.VyGround = np.reshape(self.VyGround, self.Vy.shape)
 
-        VxGround = np.flipud(VxGround)
-        VyGround = np.flipud(VyGround)
+        self.VxGround = np.flipud(self.VxGround)
+        self.VyGround = np.flipud(self.VyGround)
 
-        VyGround *= -1
+        self.VyGround *= -1
 
-        # Рисуем два векторных поля
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
-
-        # Поле 1: исходное (self.Vx, self.Vy)
-        step = max(1, self.Vx.shape[0] // 20)  # разреживаем стрелки для читаемости
-        x_plot = self.X[::step, ::step]
-        y_plot = self.Y[::step, ::step]
-        vx_plot1 = self.Vx[::step, ::step]
-        vy_plot1 = self.Vy[::step, ::step]
-        vx_plot2 = VxGround[::step, ::step]
-        vy_plot2 = VyGround[::step, ::step]
-
-        ax1.quiver(x_plot, y_plot, vx_plot1, vy_plot1, alpha=0.8)
-        ax1.set_title('Model (self.Vx, self.Vy)')
-        ax1.set_aspect('equal')
-        ax1.grid(True, alpha=0.3)
-
-        ax1.quiver(x_plot, y_plot, vx_plot2, vy_plot2, alpha=0.8, color='red')
-
-        # Поле 2: вычисленное (VxGround, VyGround)
-        ax2.quiver(x_plot, y_plot, vx_plot2, vy_plot2, alpha=0.8, color='red')
-        ax2.set_title('Ground (VxGround, VyGround)')
-        ax2.set_aspect('equal')
-        ax2.grid(True, alpha=0.3)
-
-        plt.tight_layout()
-        plt.show()
-
-        return np.sqrt(np.mean((self.Vx - VxGround) ** 2) + np.mean((self.Vy - VyGround) ** 2))
-
-
+        return np.sqrt(np.mean((self.Vx - self.VxGround) ** 2) + np.mean((self.Vy - self.VyGround) ** 2))

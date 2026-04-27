@@ -11,6 +11,14 @@ class BasicModelPIV:
         self.numOfPixelsY = int(self.numOfPixelsX * particles.Y_scale / particles.X_scale)
         self.particles = particles
 
+        self.X = None
+        self.Y = None
+        self.Vx = None
+        self.Vy = None
+
+        self.VxGround = None
+        self.VyGround = None
+
     def generatePicture(self, condition="initial"):
 
         picture = np.zeros((self.numOfPixelsX, self.numOfPixelsY))
@@ -45,9 +53,25 @@ class BasicModelPIV:
         img.save(filepath)
         print(f"Изображение сохранено как {filepath}")
 
+    def plot_velocity(self, ax):
+
+        step = max(1, self.Vx.shape[0] // 20)  # разреживаем стрелки для читаемости
+        x_plot = self.X[::step, ::step]
+        y_plot = self.Y[::step, ::step]
+        vx_plot1 = self.Vx[::step, ::step]
+        vy_plot1 = self.Vy[::step, ::step]
+        vx_plot2 = self.VxGround[::step, ::step]
+        vy_plot2 = self.VyGround[::step, ::step]
+
+        ax.quiver(x_plot, y_plot, vx_plot1, vy_plot1, alpha=0.8)
+        ax.quiver(x_plot, y_plot, vx_plot2, vy_plot2, alpha=0.8, color='red')
+
+        ax.set_title('Model (self.Vx, self.Vy)')
+        ax.set_aspect('equal')
+        ax.grid(True, alpha=0.3)
+
     def predict(self, particles):
         raise NotImplementedError("Метод predict должен быть переопределен")
 
     def error(self, flow):
         raise NotImplementedError("Метод error должен быть переопределен")
-
