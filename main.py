@@ -1,6 +1,6 @@
-import Flow
-import ModelPIV
-import Particles
+from Flow.PenningFlow import PenningFlow
+from ModelPIV.torchPIVModel import torchPIVModel
+from Particles.RandomUniformParticles import RandomUniformParticles
 
 if __name__ == "__main__":
     numOfPixels = 1024
@@ -8,11 +8,9 @@ if __name__ == "__main__":
     X_scale = 100 # mm
     Y_scale = 100 # mm
 
-
-    flow = Flow.PenningFlow()
-    particles = Particles.Particles(10 * numOfPixels, X_scale, Y_scale)
-    model = ModelPIV.torchPIVModel(numOfPixels, particles)
-
+    flow = PenningFlow()
+    particles = RandomUniformParticles(10 * numOfPixels, X_scale, Y_scale)
+    model = torchPIVModel(numOfPixels, particles)
 
     particles.evolve(flow, dt)
     model.predict(particles)
