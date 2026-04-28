@@ -11,7 +11,7 @@ def optimal_wind_size_test(flow, particles, model):
     particles.evolve(flow, dt)
 
     wind_sizes = np.linspace(16, 256, 10).astype(int)
-    errs = np.zeros_like(wind_sizes)
+    errs = np.zeros_like(wind_sizes, dtype=np.float64)
     for i, ws in enumerate(wind_sizes):
         model.set_setting(wind_size=ws, overlap=ws//2)
         model.predict(particles)

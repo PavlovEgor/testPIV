@@ -5,7 +5,7 @@ import numpy as np
 
 class PenningFlow(BasicFlow):
 
-    def __init__(self, scale=75.0, octaves=2, persistence=1.5, lacunarity=2.0, h=1e-5):
+    def __init__(self, scale=75.0, octaves=2, persistence=1.5, lacunarity=2.0, h=1e-1):
 
         super().__init__()
         self.scale = scale

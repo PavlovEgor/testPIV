@@ -9,8 +9,8 @@ import matplotlib.pyplot as plt
 def optimal_numOfParticles_test(flow, particles, model):
 
 
-    numOfParticles = np.linspace(100 * model.numOfPixelsX, 500 * model.numOfPixelsX, 10).astype(int)
-    errs = np.zeros_like(numOfParticles)
+    numOfParticles = np.linspace(1 * model.numOfPixelsX, 10 * model.numOfPixelsX, 10).astype(int)
+    errs = np.zeros_like(numOfParticles, dtype=np.float64)
     for i, nop in enumerate(numOfParticles):
 
         particles.reset(nop)

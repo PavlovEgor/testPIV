@@ -62,7 +62,7 @@ class torchPIVModel(BasicModelPIV):
                 file_fmt=self.file_fmt,
                 wind_size=self.wind_size,
                 overlap=self.overlap,
-                dt=particles.dt,  # Time between frames, mcs
+                dt=particles.dt*1000,  # Time between frames, mcs
                 scale=particles.X_scale/self.numOfPixelsX,  # mm/pix
                 multipass=self.multipass,
                 multipass_mode=self.multipass_mode,  # CWS or DWS
