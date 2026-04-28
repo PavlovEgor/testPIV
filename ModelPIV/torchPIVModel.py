@@ -29,10 +29,10 @@ class torchPIVModel(BasicModelPIV):
                     folder_mode="pairs",
                     file_fmt="jpg",
                     device="cpu",
-                    wind_size=96,
-                    overlap=48,
+                    wind_size=32,
+                    overlap=16,
                     multipass=2,
-                    multipass_mode="DWS",
+                    multipass_mode="CWS",
                     multipass_scale=2.0
                     ):
         self.tmp_folder_name = tmp_folder_name
@@ -79,8 +79,21 @@ class torchPIVModel(BasicModelPIV):
             print("particles is not evolved yet")
             exit()
 
-    def error(self, flow):
+    def error(self, flow, n=1):
+
         self.VxGround, self.VyGround = flow.velocity(self.X, self.Y)
+
+        L = self.wind_size * self.particles.X_scale / self.numOfPixelsX
+
+        for i in range(1, n+1):
+            for j in range(1, n+1):
+                VxGround_tmp, VyGround_tmp = flow.velocity(self.X - L/2 + j * L / (n+1), self.Y - L/2 + i * L / (n+1))
+
+                self.VxGround += VxGround_tmp
+                self.VyGround += VyGround_tmp
+
+        self.VxGround /= n + 1
+        self.VyGround /= n + 1
 
         self.VxGround = np.reshape(self.VxGround, self.Vx.shape)
         self.VyGround = np.reshape(self.VyGround, self.Vy.shape)
