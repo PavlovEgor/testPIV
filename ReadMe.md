@@ -51,3 +51,26 @@ error = model.error(params)
 ```
 
 
+## Installation (Linux)
+
+```
+# clone repository
+git clone https://github.com/PavlovEgor/testPIV.git
+cd testPIV
+
+# activate virtual environment
+python3 -m venv venv
+source venv/bin/activate
+
+# install dependencies
+pip install --upgrade pip
+pip install -r requirements.txt
+
+# install the package in development mode
+pip install -e .
+```
+
+Verify Installation:
+```
+python3 Tests/simple_test.py
+```
