@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.sparse import lil_matrix, csr_matrix, eye
 from scipy.sparse.linalg import spsolve
+from scipy.sparse.linalg import lsmr
 
 
 class torchPIVModel(BasicModelPIV):
@@ -107,99 +108,41 @@ class torchPIVModel(BasicModelPIV):
         return np.sqrt(np.mean((self.Vx - self.VxGround) ** 2) + np.mean((self.Vy - self.VyGround) ** 2))
     
     def correct(self):
-        """
-        Решает задачу проекции на соленоидальное поле с помощью множителей Лагранжа
-        """
             
         n_rows, n_cols = self.Vx.shape
         n_points = n_rows * n_cols
 
-        x = self.Vx
-        y = self.Vy
-        
-        # Количество уравнений связи (внутренние точки)
-        # Используем все точки, кроме граничных, которые определяются по условию
-        n_constraints = n_rows * n_cols
-        
-        # Строим матрицу связей A размера n_constraints x (2*n_points)
-        # Уравнения имеют вид: A * [u_flat; v_flat] = 0
-        
-        A = lil_matrix((n_constraints, 2 * n_points))
+        A = lil_matrix((n_points, 2 * n_points))
         
         for i in range(n_rows):
             for j in range(n_cols):
                 constraint_idx = i * n_cols + j
                 
-                # Индексы для i-1, i+1 с граничными условиями (ближайший элемент)
                 i_minus = max(0, i - 1)
                 i_plus = min(n_rows - 1, i + 1)
                 j_minus = max(0, j - 1)
                 j_plus = min(n_cols - 1, j + 1)
                 
-                # Член u_{i,j+1} - u_{i,j-1}
-                if j_plus != j_minus:  # Если соседи разные
-                    # u_{i,j+1}
-                    u_idx_plus = i * n_cols + j_plus
-                    A[constraint_idx, u_idx_plus] += 1.0
-                    
-                    # u_{i,j-1}
-                    u_idx_minus = i * n_cols + j_minus
-                    A[constraint_idx, u_idx_minus] -= 1.0
-                
-                # Член v_{i+1,j} - v_{i-1,j}
-                if i_plus != i_minus:  # Если соседи разные
-                    # v_{i+1,j}
-                    v_idx_plus = n_points + i_plus * n_cols + j
-                    A[constraint_idx, v_idx_plus] += 1.0
-                    
-                    # v_{i-1,j}
-                    v_idx_minus = n_points + i_minus * n_cols + j
-                    A[constraint_idx, v_idx_minus] -= 1.0
-        
+                u_idx_plus = i * n_cols + j_plus
+                u_idx_minus = i * n_cols + j_minus
+
+                v_idx_plus = n_points + i_plus * n_cols + j
+                v_idx_minus = n_points + i_minus * n_cols + j
+
+                A[constraint_idx, u_idx_plus] += 1.0
+                A[constraint_idx, u_idx_minus] -= 1.0
+                A[constraint_idx, v_idx_plus] += 1.0
+                A[constraint_idx, v_idx_minus] -= 1.0
+
         A = csr_matrix(A)
-        
-        # Формируем правую часть для задачи минимизации
-        # Минимизируем ||u-x||^2 + ||v-y||^2 при Au = 0
-        # Лагранжиан: L = 0.5*(||u-x||^2 + ||v-y||^2) + λ^T A [u; v]
-        # Условия стационарности:
-        # u - x + A_u^T λ = 0  -> u = x - A_u^T λ
-        # v - y + A_v^T λ = 0  -> v = y - A_v^T λ
-        # A [u; v] = 0
-        
-        # Подставляем: A [x; y] - A A^T λ = 0
-        # => A A^T λ = A [x; y]
-        
-        # Вектор известных значений
+
         b_known = np.zeros(2 * n_points)
-        b_known[:n_points] = x.flatten()
-        b_known[n_points:] = y.flatten()
+        b_known[:n_points] = self.Vx.flatten()
+        b_known[n_points:] = self.Vy.flatten()
         
-        # Правая часть для λ
-        rhs_lambda = A @ b_known
-        
-        # Решаем систему A A^T λ = rhs_lambda
-        AAT = A @ A.T
-        AAT = csr_matrix(AAT)
-        
-        # Добавляем малую регуляризацию для устойчивости
-        reg = 1e-10
-        AAT_reg = AAT + reg * eye(n_constraints, format='csr')
-        
-        try:
-            lambda_sol = spsolve(AAT_reg, rhs_lambda)
-        except Exception as e:
-            print(f"Ошибка при решении: {e}")
-            # Альтернативный метод: наименьшие квадраты
-            from scipy.sparse.linalg import lsmr
-            lambda_sol = lsmr(AAT_reg, rhs_lambda)[0]
-        
-        # Вычисляем u и v
-        u_flat = b_known[:n_points] - (A[:, :n_points].T @ lambda_sol)
-        v_flat = b_known[n_points:] - (A[:, n_points:].T @ lambda_sol)
-        
-        # Преобразуем обратно в 2D массивы
-        u = u_flat.reshape(n_rows, n_cols)
-        v = v_flat.reshape(n_rows, n_cols)
-        
-        self.Vx = u
-        self.Vy = v
+        AAT = csr_matrix(A @ A.T)
+
+        lambda_sol = spsolve(AAT, A @ b_known)
+
+        self.Vx = (b_known[:n_points] - (A[:, :n_points].T @ lambda_sol)).reshape(n_rows, n_cols)
+        self.Vy = (b_known[n_points:] - (A[:, n_points:].T @ lambda_sol)).reshape(n_rows, n_cols)
