@@ -9,6 +9,7 @@ def simple_test(flow, particles, model):
 
     particles.evolve(flow, dt)
     model.predict(particles)
+    model.correct()
     err = model.error(flow, 1)
 
     print("Error of model = ", err)
