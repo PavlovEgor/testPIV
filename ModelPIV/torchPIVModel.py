@@ -81,9 +81,7 @@ class torchPIVModel(BasicModelPIV):
             print("particles is not evolved yet")
             exit()
 
-    @BasicModelPIV.register_error("L2")
-    def errorL2(self, flow, n=1):
-
+    def groundVelocity(self, flow, n=1):
         self.VxGround, self.VyGround = flow.velocity(self.X, self.Y)
 
         L = self.wind_size * self.particles.X_scale / self.numOfPixelsX
@@ -106,8 +104,51 @@ class torchPIVModel(BasicModelPIV):
 
         self.VyGround *= -1
 
+    @BasicModelPIV.register_error("L2")
+    def errorL2(self, flow, n=1):
+
+        self.groundVelocity(flow, n)
+
+        return (np.sqrt(np.sum((self.Vx - self.VxGround) ** 2) + np.sum((self.Vy - self.VyGround) ** 2)) /
+                np.sqrt(np.sum(self.VxGround ** 2 + self.VyGround ** 2)))
+
+    @BasicModelPIV.register_error("RMSE")
+    def errorRMSE(self, flow, n=1):
+
+        self.groundVelocity(flow, n)
+
         return np.sqrt(np.mean((self.Vx - self.VxGround) ** 2) + np.mean((self.Vy - self.VyGround) ** 2))
-    
+
+    @BasicModelPIV.register_error("L1")
+    def errorL1(self, flow, n=1):
+
+        self.groundVelocity(flow, n)
+
+        return (np.sum(np.abs(self.Vx - self.VxGround) + np.sum(np.abs(self.Vy - self.VyGround))) /
+                np.sum(np.abs(self.VxGround) + np.abs(self.VyGround)))
+
+    @BasicModelPIV.register_error("MAE")
+    def errorMAE(self, flow, n=1): # Mean Angular Error
+
+        self.groundVelocity(flow, n)
+
+        groundNorm = np.sqrt(self.VxGround ** 2 + self.VyGround ** 2)
+        predicateNorm = np.sqrt(self.Vx ** 2 + self.Vy ** 2)
+
+        cos = (self.VxGround * self.Vx + self.Vy * self.VyGround) / (groundNorm * predicateNorm)
+
+        return np.mean(np.arccos(cos))
+
+    @BasicModelPIV.register_error("MME")
+    def errorMME(self, flow, n=1):  # Mean Modular Error
+
+        self.groundVelocity(flow, n)
+
+        groundNorm = np.sqrt(self.VxGround ** 2 + self.VyGround ** 2)
+        predicateNorm = np.sqrt(self.Vx ** 2 + self.Vy ** 2)
+
+        return np.mean(np.abs(groundNorm - predicateNorm))
+
     def correct(self):
             
         n_rows, n_cols = self.Vx.shape

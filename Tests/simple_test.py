@@ -12,7 +12,7 @@ def simple_test(flow, particles, model):
     particles.evolve(flow, dt)
     model.predict(particles)
     # model.correct()
-    err = model.error(flow, 'L2', n=1)
+    err = model.error(flow, error_method, n=1)
 
     print("Error of model = ", err)
 
@@ -24,7 +24,7 @@ def simple_test(flow, particles, model):
 
     model.correct()
 
-    err = model.error(flow, 'L2', n=1)
+    err = model.error(flow, error_method, n=1)
 
     print("Error of model = ", err)
 
@@ -41,9 +41,11 @@ if __name__ == "__main__":
     X_scale = 100 # mm
     Y_scale = 100 # mm
 
+    error_method = "L2"
+
     flow = PenningFlow()
     # flow = DirectionalFlow(velocity=np.array([0.2, 0.2]))
-    # flow = EllipticalFlow(center=np.array([X_scale / 2, Y_scale / 2]), omega=0.01, e=0.999)
+    # flow = EllipticalFlow(center=np.array([X_scale / 2.1, Y_scale / 2.1]), omega=0.01, e=0.999)
 
     particles = RandomUniformParticles(10 * numOfPixels, X_scale, Y_scale)
     model = torchPIVModel(numOfPixels, particles)
