@@ -1,4 +1,6 @@
 from Flow.PenningFlow import PenningFlow
+from Flow.EllipticalFlow import EllipticalFlow
+from Flow.DirectionalFlow import DirectionalFlow
 from ModelPIV.torchPIVModel import torchPIVModel
 from Particles.RandomUniformParticles import RandomUniformParticles
 
@@ -40,6 +42,9 @@ if __name__ == "__main__":
     Y_scale = 100 # mm
 
     flow = PenningFlow()
+    # flow = DirectionalFlow(velocity=np.array([0.2, 0.2]))
+    # flow = EllipticalFlow(center=np.array([X_scale / 2, Y_scale / 2]), omega=0.01, e=0.999)
+
     particles = RandomUniformParticles(10 * numOfPixels, X_scale, Y_scale)
     model = torchPIVModel(numOfPixels, particles)
 
