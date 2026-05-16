@@ -81,7 +81,8 @@ class torchPIVModel(BasicModelPIV):
             print("particles is not evolved yet")
             exit()
 
-    def error(self, flow, n=1):
+    @BasicModelPIV.register_error("L2")
+    def errorL2(self, flow, n=1):
 
         self.VxGround, self.VyGround = flow.velocity(self.X, self.Y)
 

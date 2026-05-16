@@ -73,5 +73,21 @@ class BasicModelPIV:
     def predict(self, particles):
         raise NotImplementedError("Метод predict должен быть переопределен")
 
-    def error(self, flow):
-        raise NotImplementedError("Метод error должен быть переопределен")
+    _error_methods = {}
+
+    @classmethod
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        cls._error_methods = cls._error_methods.copy()
+
+    @classmethod
+    def register_error(cls, name):
+        def decorator(func):
+            cls._error_methods[name] = func
+            return func
+        return decorator
+
+    def error(self, flow, method, **kwargs):
+        if method not in self._error_methods:
+            raise ValueError(f"Unknown method: {method}")
+        return self._error_methods[method](self, flow, **kwargs)

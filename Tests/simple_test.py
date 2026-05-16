@@ -10,7 +10,7 @@ def simple_test(flow, particles, model):
     particles.evolve(flow, dt)
     model.predict(particles)
     # model.correct()
-    err = model.error(flow, 1)
+    err = model.error(flow, 'L2', n=1)
 
     print("Error of model = ", err)
 
@@ -22,7 +22,7 @@ def simple_test(flow, particles, model):
 
     model.correct()
 
-    err = model.error(flow, 1)
+    err = model.error(flow, 'L2', n=1)
 
     print("Error of model = ", err)
 
